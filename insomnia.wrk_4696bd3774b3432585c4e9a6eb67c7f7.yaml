@@ -6475,13 +6475,6 @@ collection:
             send: true
             store: true
           rebuildPath: true
-  - name: CI - Smoke
-    meta:
-      id: fld_9142849279114edc9e4c2dbe0983d3c9
-      created: 1771409683436
-      modified: 1771495483397
-      sortKey: -1771409683436
-      description: ""
 cookieJar:
   name: Default Jar
   meta:

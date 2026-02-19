@@ -1,0 +1,21 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: gorest-api-testing
+meta:
+  id: wrk_ea866d7bccd14d5d9746550a23d3a77b
+  created: 1771510625440
+  modified: 1771510625440
+  description: ""
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_3c0db04e994db41fc87a986e7b3a4ba38b41e297
+    created: 1771510625468
+    modified: 1771510625468
+environments:
+  name: Base Environment
+  meta:
+    id: env_3c0db04e994db41fc87a986e7b3a4ba38b41e297
+    created: 1771510625466
+    modified: 1771510625466
+    isPrivate: false

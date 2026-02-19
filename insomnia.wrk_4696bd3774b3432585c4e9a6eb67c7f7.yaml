@@ -14,6 +14,518 @@ collection:
       modified: 1770742129074
       sortKey: -1770742129074
       description: ""
+  - name: Auth & Setup
+    meta:
+      id: fld_e82f7c2bda4a43aca202089d48194379
+      created: 1770742129074
+      modified: 1770742129074
+      sortKey: -1770742129074
+      description: ""
+  - name: Users
+    meta:
+      id: fld_256c558285ac46ee84e681102f2688da
+      created: 1770742136826
+      modified: 1771000673806
+      sortKey: -1770742136826
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/users"
+        name: U1 - Create User (201 + extract user_id)
+        meta:
+          id: req_83d6f0a9130c4fcc8f0241725683709e
+          created: 1770893830574
+          modified: 1771000734843
+          isPrivate: false
+          description: ""
+          sortKey: -1770894130791
+        method: POST
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "name": "Insomnia Test User",
+              "gender": "male",
+              "email": "{{ _.user_email }}",
+              "status": "active"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          preRequest: |
+            // ===============================
+            // U1 Pre-request
+            // Generate a unique email for user creation
+            // ===============================
+
+            const now = Date.now();
+            const email = `insomnia-user-${now}@example.com`;
+
+            // store for request body usage
+            insomnia.environment.set("user_email", email);
+          afterResponse: >
+            // ===============================
+
+            // U1 After-response
+
+            // POST /users (authorized)
+
+            // Expect: 201 Created
+
+            // Store: user_id, user_email (from response)
+
+            // Insomnia 12.3.1 compatible
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let data = null;
+
+            try {
+              data = insomnia.response.json();
+            } catch (e) {
+              data = null;
+            }
+
+
+            insomnia.test("Status code is 201", () => {
+              insomnia.expect(getStatusCode()).to.eql(201);
+            });
+
+
+            insomnia.test("Content-Type is application/json", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Response has user fields", () => {
+              insomnia.expect(data).to.be.an("object");
+              insomnia.expect(data).to.have.property("id");
+              insomnia.expect(data).to.have.property("name");
+              insomnia.expect(data).to.have.property("email");
+              insomnia.expect(data).to.have.property("gender");
+              insomnia.expect(data).to.have.property("status");
+
+              insomnia.expect(typeof data.id).to.eql("number");
+              insomnia.expect(typeof data.email).to.eql("string");
+              insomnia.expect(data.email).to.contain("@");
+              insomnia.expect(["male", "female"]).to.contain(data.gender);
+              insomnia.expect(["active", "inactive"]).to.contain(data.status);
+            });
+
+
+            insomnia.test("Email in response matches the generated email", () =>
+            {
+              const generated = insomnia.environment.get("user_email");
+              insomnia.expect(generated).to.be.a("string");
+              insomnia.expect(data.email).to.eql(generated);
+            });
+
+
+            // Store values for subsequent requests
+
+            if (data && typeof data.id === "number") {
+              insomnia.environment.set("user_id", String(data.id));
+              // keep user_email as set in pre-request; optionally overwrite with response
+              insomnia.environment.set("user_email", data.email);
+            }
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users/{{ _.user_id }}"
+        name: U2 - Get User by ID (200)
+        meta:
+          id: req_2ef9721849794c8a8d9e179dfb32b48d
+          created: 1770893909018
+          modified: 1771000737051
+          isPrivate: false
+          description: ""
+          sortKey: -1770894130741
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            // ===============================
+
+            // U2 After-response
+
+            // GET /users/{user_id} (authorized)
+
+            // Expect: 200 OK
+
+            // Validate: id matches env user_id; email matches env user_email
+
+            // Insomnia 12.3.1 compatible
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let data = null;
+
+            try {
+              data = insomnia.response.json();
+            } catch (e) {
+              data = null;
+            }
+
+
+            insomnia.test("Status code is 200", () => {
+              insomnia.expect(getStatusCode()).to.eql(200);
+            });
+
+
+            insomnia.test("Content-Type is application/json", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Response has user fields", () => {
+              insomnia.expect(data).to.be.an("object");
+              insomnia.expect(data).to.have.property("id");
+              insomnia.expect(data).to.have.property("name");
+              insomnia.expect(data).to.have.property("email");
+              insomnia.expect(data).to.have.property("gender");
+              insomnia.expect(data).to.have.property("status");
+            });
+
+
+            insomnia.test("Response id matches environment user_id", () => {
+              const envId = insomnia.environment.get("user_id");
+              insomnia.expect(envId).to.be.a("string");
+
+              // API returns number; env is stored as string
+              insomnia.expect(String(data.id)).to.eql(String(envId));
+            });
+
+
+            insomnia.test("Response email matches environment user_email", () =>
+            {
+              const envEmail = insomnia.environment.get("user_email");
+              // email might be absent if you haven't run U1, so we enforce it strictly here
+              insomnia.expect(envEmail).to.be.a("string");
+              insomnia.expect(data.email).to.eql(envEmail);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users/{{ _.user_id }}"
+        name: U3 - Update User status to inactive (200)
+        meta:
+          id: req_bbd863731df142a099d867673bdda8f9
+          created: 1770893986929
+          modified: 1771000743619
+          isPrivate: false
+          description: ""
+          sortKey: -1770894130716
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "status": "inactive"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            // ===============================
+
+            // U3 After-response
+
+            // PATCH /users/{user_id} (authorized)
+
+            // Update: status -> inactive
+
+            // Expect: 200 OK, status inactive
+
+            // Insomnia 12.3.1 compatible
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let data = null;
+
+            try {
+              data = insomnia.response.json();
+            } catch (e) {
+              data = null;
+            }
+
+
+            insomnia.test("Status code is 200", () => {
+              insomnia.expect(getStatusCode()).to.eql(200);
+            });
+
+
+            insomnia.test("Content-Type is application/json", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Response has user fields", () => {
+              insomnia.expect(data).to.be.an("object");
+              insomnia.expect(data).to.have.property("id");
+              insomnia.expect(data).to.have.property("email");
+              insomnia.expect(data).to.have.property("status");
+            });
+
+
+            insomnia.test("Response id matches environment user_id", () => {
+              const envId = insomnia.environment.get("user_id");
+              insomnia.expect(envId).to.be.a("string");
+              insomnia.expect(String(data.id)).to.eql(String(envId));
+            });
+
+
+            insomnia.test("Status is updated to inactive", () => {
+              insomnia.expect(data.status).to.eql("inactive");
+            });
+
+
+            // Keep environment in sync (useful for later assertions)
+
+            if (data && typeof data.status === "string") {
+              insomnia.environment.set("user_status", data.status);
+            }
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users/{{ _.user_id }}"
+        name: U4 - Delete User (204)
+        meta:
+          id: req_dfa9c9b9b2814182a3d41af7a3acbce8
+          created: 1770894075409
+          modified: 1771000745432
+          isPrivate: false
+          description: ""
+          sortKey: -1770894130703.5
+        method: DELETE
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            // ===============================
+
+            // U4 After-response
+
+            // DELETE /users/{user_id} (authorized)
+
+            // Expect: 204 No Content
+
+            // Insomnia 12.3.1 compatible
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            insomnia.test("Status code is 204", () => {
+              insomnia.expect(getStatusCode()).to.eql(204);
+            });
+
+
+            insomnia.test("Response body is empty (best-effort)", () => {
+              // 204 should not include a response body. Some clients still show empty string.
+              const body = insomnia.response.body;
+              if (typeof body === "string") {
+                insomnia.expect(body.length).to.eql(0);
+              }
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users/{{ _.user_id }}"
+        name: U5 - Get deleted user (404)
+        meta:
+          id: req_a6c1aae2108048b5b9805b4cebe33578
+          created: 1770894130691
+          modified: 1770894165854
+          isPrivate: false
+          description: ""
+          sortKey: -1770894130691
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            // ===============================
+
+            // U5 After-response
+
+            // GET /users/{user_id} after deletion (authorized)
+
+            // Expect: 404 Not Found
+
+            // Insomnia 12.3.1 compatible
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let json = null;
+
+            try {
+              json = insomnia.response.json();
+            } catch (e) {
+              json = null;
+            }
+
+
+            insomnia.test("Status code is 404", () => {
+              insomnia.expect(getStatusCode()).to.eql(404);
+            });
+
+
+            insomnia.test("Content-Type is JSON when present", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              if (ct) insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Error payload is present (soft)", () => {
+              // GoREST often returns { message: "Resource not found" } for 404.
+              // Keep it soft to avoid brittleness.
+              if (!json) return;
+
+              const asString = JSON.stringify(json).toLowerCase();
+              const expectedFragments = ["not found", "resource", "message"];
+              const matched = expectedFragments.some(f => asString.includes(f));
+
+              insomnia.expect(matched).to.eql(true);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+    authentication:
+      type: bearer
+      token: e39fab0182f87db576b021c7431e3ee5baf63609a7bad5debf3735951bead666
   - name: Users
     meta:
       id: fld_dd41f97b7c5c4653976d9eceec8f7b76
@@ -1059,12 +1571,566 @@ collection:
     authentication:
       type: bearer
       token: e39fab0182f87db576b021c7431e3ee5baf63609a7bad5debf3735951bead666
+  - name: Posts
+    meta:
+      id: fld_dca2556220484ae8a42156ff6a28801e
+      created: 1770742146563
+      modified: 1771000671654
+      sortKey: -1770742146563
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/users"
+        name: P0 - Create User for Posts (201 + extract post_user_id)
+        meta:
+          id: req_e163a3d1c9a546309fe41ac51955bde2
+          created: 1770895573811
+          modified: 1770895882121
+          isPrivate: false
+          description: ""
+          sortKey: -1770895826324
+        method: POST
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "name": "Insomnia Posts User",
+              "gender": "male",
+              "email": "{{ _.post_user_email }}",
+              "status": "active"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          preRequest: |
+            // ===============================
+            // P0 Pre-request
+            // Generate unique email for posts user
+            // ===============================
+
+            const now = Date.now();
+            const email = `posts-user-${now}@example.com`;
+
+            insomnia.environment.set("post_user_email", email);
+          afterResponse: >
+            // ===============================
+
+            // P0 After-response
+
+            // POST /users (authorized)
+
+            // Expect: 201
+
+            // Store: post_user_id, post_user_email
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let data = null;
+
+            try {
+              data = insomnia.response.json();
+            } catch (e) {
+              data = null;
+            }
+
+
+            insomnia.test("Status code is 201", () => {
+              insomnia.expect(getStatusCode()).to.eql(201);
+            });
+
+
+            insomnia.test("Content-Type is application/json", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Response has user fields", () => {
+              insomnia.expect(data).to.be.an("object");
+              insomnia.expect(data).to.have.property("id");
+              insomnia.expect(data).to.have.property("email");
+              insomnia.expect(data).to.have.property("status");
+              insomnia.expect(typeof data.id).to.eql("number");
+              insomnia.expect(data.status).to.eql("active");
+            });
+
+
+            insomnia.test("Email matches generated post_user_email", () => {
+              const generated = insomnia.environment.get("post_user_email");
+              insomnia.expect(generated).to.be.a("string");
+              insomnia.expect(data.email).to.eql(generated);
+            });
+
+
+            // Store for Posts suite
+
+            if (data && typeof data.id === "number") {
+              insomnia.environment.set("post_user_id", String(data.id));
+              insomnia.environment.set("post_user_email", data.email);
+            }
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users/{{ _.post_user_id }}/posts"
+        name: P1 - Create Post for User (201 + extract post_id)
+        meta:
+          id: req_92835d988af7444cb884eb81f97ebabb
+          created: 1770895696000
+          modified: 1770895884429
+          isPrivate: false
+          description: ""
+          sortKey: -1770895826274
+        method: POST
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "title": "{{ _.post_title }}",
+              "body": "{{ _.post_body }}"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          preRequest: >
+            // ===============================
+
+            // P1 Pre-request
+
+            // Generate unique post title/body
+
+            // ===============================
+
+
+            const now = Date.now();
+
+            insomnia.environment.set("post_title", `Insomnia Post Title
+            ${now}`);
+
+            insomnia.environment.set("post_body", `Post body created by Insomnia
+            at ${new Date(now).toISOString()}`);
+          afterResponse: >
+            // ===============================
+
+            // P1 After-response
+
+            // POST /users/{post_user_id}/posts
+
+            // Expect: 201
+
+            // Store: post_id
+
+            // Validate: user_id matches post_user_id
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let data = null;
+
+            try {
+              data = insomnia.response.json();
+            } catch (e) {
+              data = null;
+            }
+
+
+            insomnia.test("Status code is 201", () => {
+              insomnia.expect(getStatusCode()).to.eql(201);
+            });
+
+
+            insomnia.test("Content-Type is application/json", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Response has post fields", () => {
+              insomnia.expect(data).to.be.an("object");
+              insomnia.expect(data).to.have.property("id");
+              insomnia.expect(data).to.have.property("user_id");
+              insomnia.expect(data).to.have.property("title");
+              insomnia.expect(data).to.have.property("body");
+              insomnia.expect(typeof data.id).to.eql("number");
+              insomnia.expect(typeof data.user_id).to.eql("number");
+            });
+
+
+            insomnia.test("user_id matches post_user_id env", () => {
+              const envUserId = insomnia.environment.get("post_user_id");
+              insomnia.expect(envUserId).to.be.a("string");
+              insomnia.expect(String(data.user_id)).to.eql(String(envUserId));
+            });
+
+
+            insomnia.test("title/body match what we sent", () => {
+              const title = insomnia.environment.get("post_title");
+              const body = insomnia.environment.get("post_body");
+              insomnia.expect(data.title).to.eql(title);
+              insomnia.expect(data.body).to.eql(body);
+            });
+
+
+            // Store post_id for next steps
+
+            if (data && typeof data.id === "number") {
+              insomnia.environment.set("post_id", String(data.id));
+            }
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/posts/{{ _.post_id }}"
+        name: P2 - Get Post by ID (200)
+        meta:
+          id: req_d5f01568531a4a2f8b73ad755df4d84c
+          created: 1770895744051
+          modified: 1770895886287
+          isPrivate: false
+          description: ""
+          sortKey: -1770895826249
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            // ===============================
+
+            // P2 After-response
+
+            // GET /posts/{post_id}
+
+            // Expect: 200
+
+            // Validate: id matches env post_id, user_id matches env
+            post_user_id
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let data = null;
+
+            try {
+              data = insomnia.response.json();
+            } catch (e) {
+              data = null;
+            }
+
+
+            insomnia.test("Status code is 200", () => {
+              insomnia.expect(getStatusCode()).to.eql(200);
+            });
+
+
+            insomnia.test("Content-Type is application/json", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Post id matches env post_id", () => {
+              const envPostId = insomnia.environment.get("post_id");
+              insomnia.expect(envPostId).to.be.a("string");
+              insomnia.expect(String(data.id)).to.eql(String(envPostId));
+            });
+
+
+            insomnia.test("Post user_id matches env post_user_id", () => {
+              const envUserId = insomnia.environment.get("post_user_id");
+              insomnia.expect(envUserId).to.be.a("string");
+              insomnia.expect(String(data.user_id)).to.eql(String(envUserId));
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/posts/{{ _.post_id }}"
+        name: P3 - Delete Post (204)
+        meta:
+          id: req_5b5fd8a85c6848be900a98a7a4d5f642
+          created: 1770895788127
+          modified: 1770895888927
+          isPrivate: false
+          description: ""
+          sortKey: -1770895826236.5
+        method: DELETE
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            // ===============================
+
+            // P3 After-response
+
+            // DELETE /posts/{post_id}
+
+            // Expect: 204
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            insomnia.test("Status code is 204", () => {
+              insomnia.expect(getStatusCode()).to.eql(204);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users/{{ _.post_user_id }}"
+        name: "P4 - Delete Posts User (204) Method: DELETE"
+        meta:
+          id: req_703f4b09d8f34243bad55c5920c0936c
+          created: 1770895826224
+          modified: 1770895850752
+          isPrivate: false
+          description: ""
+          sortKey: -1770895826224
+        method: DELETE
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            // ===============================
+
+            // P4 After-response
+
+            // DELETE /users/{post_user_id}
+
+            // Expect: 204
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            insomnia.test("Status code is 204", () => {
+              insomnia.expect(getStatusCode()).to.eql(204);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/posts/{{ _.post_id }}"
+        name: P5 - Get deleted post (404)
+        meta:
+          id: req_a912dff8d3a0422b94f58f9943b49f4e
+          created: 1770896705040
+          modified: 1770896771710
+          isPrivate: false
+          description: ""
+          sortKey: -1770895826230.25
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            // ===============================
+
+            // P5 After-response
+
+            // GET /posts/{post_id} after deletion
+
+            // Expect: 404 Not Found
+
+            // Insomnia 12.3.1 compatible
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let json = null;
+
+            try {
+              json = insomnia.response.json();
+            } catch (e) {
+              json = null;
+            }
+
+
+            insomnia.test("Status code is 404", () => {
+              insomnia.expect(getStatusCode()).to.eql(404);
+            });
+
+
+            insomnia.test("Content-Type is JSON when present", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              if (ct) insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Error payload indicates not found (soft)", () => {
+              if (!json) return;
+
+              const lower = JSON.stringify(json).toLowerCase();
+              const expectedFragments = ["not found", "resource", "message"];
+              const matched = expectedFragments.some(f => lower.includes(f));
+
+              insomnia.expect(matched).to.eql(true);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+    authentication:
+      type: bearer
+      token: e39fab0182f87db576b021c7431e3ee5baf63609a7bad5debf3735951bead666
   - name: Comments
     meta:
       id: fld_3ef685a642b84331a6c26766f0cbc191
       created: 1770742154700
       modified: 1771000752015
       sortKey: -1770742154700
+      description: ""
+  - name: Comments
+    meta:
+      id: fld_f4979ab4c88042b09fb0f05989166ecd
+      created: 1770742154700
+      modified: 1771000752015
+      sortKey: -1770742154700
+      description: ""
+  - name: Todos
+    meta:
+      id: fld_407fb819dcf144388ad041bcd78293c8
+      created: 1770742161990
+      modified: 1771000753182
+      sortKey: -1770742161990
       description: ""
   - name: Todos
     meta:
@@ -1073,6 +2139,573 @@ collection:
       modified: 1771000753182
       sortKey: -1770742161990
       description: ""
+  - name: E2E Flows
+    meta:
+      id: fld_99f27d154f0343c99ba3bec265a5de1e
+      created: 1770742171963
+      modified: 1771000755416
+      sortKey: -1770742171963
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/users"
+        name: E2E-01 — Create User (201 + store e2e_user_id/email)
+        meta:
+          id: req_eb9471c9057e42fc8ddf4b4638ffad2c
+          created: 1770976869207
+          modified: 1770977209253
+          isPrivate: false
+          description: ""
+          sortKey: -1770977183350
+        method: POST
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "name": "E2E Flow User",
+              "gender": "male",
+              "email": "{{ _.e2e_user_email }}",
+              "status": "active"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          preRequest: >
+            // E2E-01 Pre-request: generate unique email
+
+            const now = Date.now();
+
+            insomnia.environment.set("e2e_user_email",
+            `e2e-user-${now}@example.com`);
+          afterResponse: >
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const m = insomnia.response.status.match(/\d{3}/);
+                if (m) return Number(m[0]);
+              }
+              return undefined;
+            }
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const h = headers.find(x => (x.key || "").toLowerCase() === name.toLowerCase());
+              return h ? String(h.value || "") : "";
+            }
+
+
+            let data = null;
+
+            try { data = insomnia.response.json(); } catch { data = null; }
+
+
+            insomnia.test("201 Created", () => {
+              insomnia.expect(getStatusCode()).to.eql(201);
+            });
+
+            insomnia.test("JSON response", () => {
+              insomnia.expect(getHeader("content-type").toLowerCase()).to.contain("application/json");
+            });
+
+            insomnia.test("Stores e2e_user_id", () => {
+              insomnia.expect(data).to.be.an("object");
+              insomnia.expect(typeof data.id).to.eql("number");
+              insomnia.environment.set("e2e_user_id", String(data.id));
+            });
+
+            insomnia.test("Email matches generated", () => {
+              const email = insomnia.environment.get("e2e_user_email");
+              insomnia.expect(data.email).to.eql(email);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users/{{ _.e2e_user_id }}"
+        name: E2E-02 — Get User (200 + id/email match)
+        meta:
+          id: req_106a368d353446428e3873a4bb932628
+          created: 1770976940608
+          modified: 1770977215807
+          isPrivate: false
+          description: ""
+          sortKey: -1770977183300
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const m = insomnia.response.status.match(/\d{3}/);
+                if (m) return Number(m[0]);
+              }
+              return undefined;
+            }
+
+            let data = null;
+
+            try { data = insomnia.response.json(); } catch { data = null; }
+
+
+            insomnia.test("200 OK", () => {
+              insomnia.expect(getStatusCode()).to.eql(200);
+            });
+
+            insomnia.test("User id matches e2e_user_id", () => {
+              const id = insomnia.environment.get("e2e_user_id");
+              insomnia.expect(String(data.id)).to.eql(String(id));
+            });
+
+            insomnia.test("User email matches e2e_user_email", () => {
+              const email = insomnia.environment.get("e2e_user_email");
+              insomnia.expect(data.email).to.eql(email);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users/{{ _.e2e_user_id }}/posts"
+        name: E2E-03 — Create Post for User (201 + store e2e_post_id)
+        meta:
+          id: req_d34509cd507e469398c1ccb2aef8a9dd
+          created: 1770976976298
+          modified: 1770977218714
+          isPrivate: false
+          description: ""
+          sortKey: -1770977183275
+        method: POST
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "title": "{{ _.e2e_post_title }}",
+              "body": "{{ _.e2e_post_body }}"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          preRequest: >
+            const now = Date.now();
+
+            insomnia.environment.set("e2e_post_title", `E2E Post ${now}`);
+
+            insomnia.environment.set("e2e_post_body", `E2E body at ${new
+            Date(now).toISOString()}`);
+          afterResponse: >
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const m = insomnia.response.status.match(/\d{3}/);
+                if (m) return Number(m[0]);
+              }
+              return undefined;
+            }
+
+            let data = null;
+
+            try { data = insomnia.response.json(); } catch { data = null; }
+
+
+            insomnia.test("201 Created", () => {
+              insomnia.expect(getStatusCode()).to.eql(201);
+            });
+
+            insomnia.test("Post belongs to e2e_user_id", () => {
+              const uid = insomnia.environment.get("e2e_user_id");
+              insomnia.expect(String(data.user_id)).to.eql(String(uid));
+            });
+
+            insomnia.test("Stores e2e_post_id", () => {
+              insomnia.expect(typeof data.id).to.eql("number");
+              insomnia.environment.set("e2e_post_id", String(data.id));
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/posts/{{ _.e2e_post_id }}"
+        name: E2E-04 — Get Post (200 + id/user_id match)
+        meta:
+          id: req_6b1a56419d404056b175fd535a860b01
+          created: 1770977013101
+          modified: 1770977221692
+          isPrivate: false
+          description: ""
+          sortKey: -1770977183262.5
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const m = insomnia.response.status.match(/\d{3}/);
+                if (m) return Number(m[0]);
+              }
+              return undefined;
+            }
+
+            let data = null;
+
+            try { data = insomnia.response.json(); } catch { data = null; }
+
+
+            insomnia.test("200 OK", () => {
+              insomnia.expect(getStatusCode()).to.eql(200);
+            });
+
+            insomnia.test("Post id matches e2e_post_id", () => {
+              const pid = insomnia.environment.get("e2e_post_id");
+              insomnia.expect(String(data.id)).to.eql(String(pid));
+            });
+
+            insomnia.test("Post user_id matches e2e_user_id", () => {
+              const uid = insomnia.environment.get("e2e_user_id");
+              insomnia.expect(String(data.user_id)).to.eql(String(uid));
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users/{{ _.e2e_user_id }}"
+        name: E2E-05 — Update User status inactive (200)
+        meta:
+          id: req_7bab118af731470c9a2a56e81bfc5136
+          created: 1770977039035
+          modified: 1770977224699
+          isPrivate: false
+          description: ""
+          sortKey: -1770977183256.25
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: |
+            { "status": "inactive" }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const m = insomnia.response.status.match(/\d{3}/);
+                if (m) return Number(m[0]);
+              }
+              return undefined;
+            }
+
+            let data = null;
+
+            try { data = insomnia.response.json(); } catch { data = null; }
+
+
+            insomnia.test("200 OK", () => {
+              insomnia.expect(getStatusCode()).to.eql(200);
+            });
+
+            insomnia.test("Status updated to inactive", () => {
+              insomnia.expect(data.status).to.eql("inactive");
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/posts/{{ _.e2e_post_id }}"
+        name: E2E-06 — Delete Post (204)
+        meta:
+          id: req_65c55141c4df438d8f24adb9d9c7debe
+          created: 1770977069471
+          modified: 1770977228868
+          isPrivate: false
+          description: ""
+          sortKey: -1770977183253.125
+        method: DELETE
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const m = insomnia.response.status.match(/\d{3}/);
+                if (m) return Number(m[0]);
+              }
+              return undefined;
+            }
+
+
+            insomnia.test("204 No Content", () => {
+              insomnia.expect(getStatusCode()).to.eql(204);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users/{{ _.e2e_user_id }}"
+        name: E2E-07 — Delete User (204)
+        meta:
+          id: req_e14d3c60126a46acb285d3b5c7b90952
+          created: 1770977099055
+          modified: 1770977230772
+          isPrivate: false
+          description: ""
+          sortKey: -1770977183251.5625
+        method: DELETE
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const m = insomnia.response.status.match(/\d{3}/);
+                if (m) return Number(m[0]);
+              }
+              return undefined;
+            }
+
+            insomnia.test("204 No Content", () => {
+              insomnia.expect(getStatusCode()).to.eql(204);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/posts/{{ _.e2e_post_id }}"
+        name: E2E-08 — Verify deleted post is 404
+        meta:
+          id: req_5054a62709454f05804d7ba4a755de16
+          created: 1770977143708
+          modified: 1770977232657
+          isPrivate: false
+          description: ""
+          sortKey: -1770977183250.7812
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const m = insomnia.response.status.match(/\d{3}/);
+                if (m) return Number(m[0]);
+              }
+              return undefined;
+            }
+
+            insomnia.test("404 Not Found", () => {
+              insomnia.expect(getStatusCode()).to.eql(404);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users/{{ _.e2e_user_id }}"
+        name: E2E-09 — Verify deleted user is 404
+        meta:
+          id: req_f103f1b7835547f19d394edfbaf2af0b
+          created: 1770977183250
+          modified: 1770977200814
+          isPrivate: false
+          description: ""
+          sortKey: -1770977183250
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const m = insomnia.response.status.match(/\d{3}/);
+                if (m) return Number(m[0]);
+              }
+              return undefined;
+            }
+
+            insomnia.test("404 Not Found", () => {
+              insomnia.expect(getStatusCode()).to.eql(404);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users"
+        name: E2E-CLEANUP - Clear E2E environment state
+        meta:
+          id: req_f8a378b666844c609599e6f6be2d7447
+          created: 1770979140788
+          modified: 1770979176194
+          isPrivate: false
+          description: ""
+          sortKey: -1770977183150
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          preRequest: >
+            // ===============================
+
+            // E2E Cleanup Pre-request
+
+            // Best-effort deletion of leftover entities
+
+            // ===============================
+
+
+            const baseUrl = insomnia.environment.get("base_url");
+
+            const token = insomnia.environment.get("token");
+
+
+            const userId = insomnia.environment.get("e2e_user_id");
+
+            const postId = insomnia.environment.get("e2e_post_id");
+
+
+            async function safeDelete(url) {
+              try {
+                await fetch(url, {
+                  method: "DELETE",
+                  headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                  }
+                });
+              } catch (err) {
+                console.log("Cleanup delete failed (safe to ignore):", err.message);
+              }
+            }
+
+
+            (async () => {
+              if (postId) {
+                await safeDelete(`${baseUrl}/posts/${postId}`);
+              }
+
+              if (userId) {
+                await safeDelete(`${baseUrl}/users/${userId}`);
+              }
+            })();
+          afterResponse: |
+            // ===============================
+            // E2E Cleanup After-response
+            // Clear E2E environment variables
+            // ===============================
+
+            const keys = [
+              "e2e_user_id",
+              "e2e_user_email",
+              "e2e_post_id",
+              "e2e_post_title",
+              "e2e_post_body"
+            ];
+
+            keys.forEach(k => {
+              insomnia.environment.unset(k);
+            });
+
+            insomnia.test("E2E environment variables cleared", () => {
+              keys.forEach(k => {
+                const val = insomnia.environment.get(k);
+                insomnia.expect(val).to.eql(undefined);
+              });
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+    authentication:
+      type: bearer
+      token: e39fab0182f87db576b021c7431e3ee5baf63609a7bad5debf3735951bead666
   - name: E2E Flows
     meta:
       id: fld_b081d6f99a0b4db89588339f52f61178
@@ -1640,6 +3273,355 @@ collection:
     authentication:
       type: bearer
       token: e39fab0182f87db576b021c7431e3ee5baf63609a7bad5debf3735951bead666
+  - name: Health&Basics (No Auth)
+    meta:
+      id: fld_517385ad829a468a9e724cf8266e3140
+      created: 1770889435384
+      modified: 1771000664689
+      sortKey: -1770889435384
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/users"
+        name: H1 - GET Users (200 + JSON + shape)
+        meta:
+          id: req_600cfb176d31412d8f2be6daa0c70a43
+          created: 1770889561635
+          modified: 1771000759091
+          isPrivate: false
+          description: ""
+          sortKey: -1770892203024
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            // ===============================
+
+            // H1 - GET /users
+
+            // Health & Basics validation
+
+            // Insomnia 12.3.1 compatible
+
+            // ===============================
+
+
+            // -------- Helper: Get Status Code --------
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") {
+                return insomnia.response.statusCode;
+              }
+              if (typeof insomnia.response.code === "number") {
+                return insomnia.response.code;
+              }
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            // -------- Helper: Get Header Value --------
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(
+                h => (h.key || "").toLowerCase() === name.toLowerCase()
+              );
+              return header ? String(header.value || "") : "";
+            }
+
+
+            // -------- Parse Body Safely --------
+
+            let data;
+
+            try {
+              data = insomnia.response.json();
+            } catch (err) {
+              data = null;
+            }
+
+
+            // ==================================
+
+            // Tests
+
+            // ==================================
+
+
+            insomnia.test("Status code is 200", () => {
+              const code = getStatusCode();
+              insomnia.expect(code).to.eql(200);
+            });
+
+
+            insomnia.test("Content-Type is application/json", () => {
+              const contentType = getHeader("content-type").toLowerCase();
+              insomnia.expect(contentType).to.contain("application/json");
+            });
+
+
+            insomnia.test("Response body is a JSON array", () => {
+              insomnia.expect(Array.isArray(data)).to.eql(true);
+            });
+
+
+            insomnia.test("If non-empty, first item matches User contract", ()
+            => {
+              if (!Array.isArray(data) || data.length === 0) return;
+
+              const u = data[0];
+
+              insomnia.expect(u).to.have.property("id");
+              insomnia.expect(u).to.have.property("name");
+              insomnia.expect(u).to.have.property("email");
+              insomnia.expect(u).to.have.property("gender");
+              insomnia.expect(u).to.have.property("status");
+
+              insomnia.expect(typeof u.id).to.eql("number");
+              insomnia.expect(typeof u.name).to.eql("string");
+              insomnia.expect(typeof u.email).to.eql("string");
+              insomnia.expect(u.email).to.contain("@");
+
+              insomnia.expect(["male", "female"]).to.contain(u.gender);
+              insomnia.expect(["active", "inactive"]).to.contain(u.status);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users?page=1&per_page=5"
+        name: H2 - GET Users (pagination per_page=5)
+        meta:
+          id: req_0a1305980a4a4cdf9f67bd7738a980d1
+          created: 1770891589999
+          modified: 1771000760861
+          isPrivate: false
+          description: ""
+          sortKey: -1770892202974
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            // ===============================
+
+            // H2 - GET /users?page=1&per_page=5
+
+            // Pagination sanity
+
+            // Insomnia 12.3.1 compatible
+
+            // ===============================
+
+
+            const PER_PAGE = 5;
+
+
+            // -------- Helper: Get Status Code --------
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            // -------- Helper: Get Header Value --------
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            // -------- Parse Body Safely --------
+
+            let data;
+
+            try {
+              data = insomnia.response.json();
+            } catch (err) {
+              data = null;
+            }
+
+
+            // ==================================
+
+            // Tests
+
+            // ==================================
+
+
+            insomnia.test("Status code is 200", () => {
+              insomnia.expect(getStatusCode()).to.eql(200);
+            });
+
+
+            insomnia.test("Content-Type is application/json", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Response body is a JSON array", () => {
+              insomnia.expect(Array.isArray(data)).to.eql(true);
+            });
+
+
+            insomnia.test(`Array length is <= per_page (${PER_PAGE})`, () => {
+              // This should always hold if the API respects per_page.
+              // If the dataset is smaller than PER_PAGE, length can be < PER_PAGE (valid).
+              insomnia.expect(data.length).to.be.at.most(PER_PAGE);
+            });
+
+
+            insomnia.test("If non-empty, first item matches User contract", ()
+            => {
+              if (!Array.isArray(data) || data.length === 0) return;
+
+              const u = data[0];
+              const required = ["id", "name", "email", "gender", "status"];
+              for (const k of required) {
+                if (!(k in u)) throw new Error(`Missing field '${k}' on first user object`);
+              }
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/posts"
+        name: H3 - GET Posts (public, no auth)
+        meta:
+          id: req_01289871a96d449c872568cd757e38ec
+          created: 1770892202924
+          modified: 1770892233366
+          isPrivate: false
+          description: ""
+          sortKey: -1770892202924
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          afterResponse: >
+            // ===============================
+
+            // H3 - GET /posts (public)
+
+            // Health & Basics validation
+
+            // Insomnia 12.3.1 compatible
+
+            // ===============================
+
+
+            // -------- Helper: Get Status Code --------
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            // -------- Helper: Get Header Value --------
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            // -------- Parse Body Safely --------
+
+            let data;
+
+            try {
+              data = insomnia.response.json();
+            } catch (err) {
+              data = null;
+            }
+
+
+            // ==================================
+
+            // Tests
+
+            // ==================================
+
+
+            insomnia.test("Status code is 200", () => {
+              const code = getStatusCode();
+              insomnia.expect(code).to.eql(200);
+            });
+
+
+            insomnia.test("Content-Type is application/json", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Response body is a JSON array", () => {
+              insomnia.expect(Array.isArray(data)).to.eql(true);
+            });
+
+
+            insomnia.test("If non-empty, first item matches Post contract", ()
+            => {
+              if (!Array.isArray(data) || data.length === 0) return;
+
+              const p = data[0];
+
+              // Minimal GoREST post contract
+              insomnia.expect(p).to.have.property("id");
+              insomnia.expect(p).to.have.property("user_id");
+              insomnia.expect(p).to.have.property("title");
+              insomnia.expect(p).to.have.property("body");
+
+              insomnia.expect(typeof p.id).to.eql("number");
+              insomnia.expect(typeof p.user_id).to.eql("number");
+              insomnia.expect(typeof p.title).to.eql("string");
+              insomnia.expect(typeof p.body).to.eql("string");
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
   - name: Health&Basics (No Auth)
     meta:
       id: fld_6f64a8e45a164794871ece25045d87ae
@@ -3116,6 +5098,1258 @@ collection:
         name: U-VAL5 - Create User invalid status enum (422)
         meta:
           id: req_ff7f6e4b8292472da1778e51dd0b0896
+          created: 1770976520392
+          modified: 1770976628187
+          isPrivate: false
+          description: ""
+          sortKey: -1770976520392
+        method: POST
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "name": "Invalid Status User",
+              "gender": "male",
+              "email": "{{ _.invalid_status_email }}",
+              "status": "enabled"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        authentication:
+          type: bearer
+          token: e39fab0182f87db576b021c7431e3ee5baf63609a7bad5debf3735951bead666
+        scripts:
+          preRequest: |
+            // ===============================
+            // U-VAL5 Pre-request
+            // Generate unique email so only status causes validation failure
+            // ===============================
+
+            const now = Date.now();
+            const email = `invalid-status-${now}@example.com`;
+
+            insomnia.environment.set("invalid_status_email", email);
+          afterResponse: >
+            // ===============================
+
+            // U-VAL5 After-response
+
+            // POST /users with invalid status enum
+
+            // Expect: 422 Unprocessable Entity
+
+            // Validate: error references 'status'
+
+            // Insomnia 12.3.1 compatible
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let data = null;
+
+            try {
+              data = insomnia.response.json();
+            } catch (e) {
+              data = null;
+            }
+
+
+            insomnia.test("Status code is 422", () => {
+              insomnia.expect(getStatusCode()).to.eql(422);
+            });
+
+
+            insomnia.test("Content-Type is application/json", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Response is validation error array", () => {
+              insomnia.expect(Array.isArray(data)).to.eql(true);
+            });
+
+
+            insomnia.test("At least one validation error references 'status'",
+            () => {
+              if (!Array.isArray(data)) throw new Error("Expected validation errors array");
+
+              const mentionsStatus = data.some(err => {
+                const field = String(err.field || "").toLowerCase();
+                const msg = String(err.message || "").toLowerCase();
+                return field === "status" || msg.includes("status");
+              });
+
+              insomnia.expect(mentionsStatus).to.eql(true);
+            });
+
+
+            insomnia.test("Log status validation message (non-failing)", () => {
+              if (!Array.isArray(data)) return;
+
+              const statusErr = data.find(err => String(err.field || "").toLowerCase() === "status");
+              if (!statusErr) return;
+
+              console.log("GoREST status validation message:", String(statusErr.message || ""));
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Negative Tests
+    meta:
+      id: fld_4345367c52c741a4aef0e541afcd0243
+      created: 1770889450657
+      modified: 1771000784810
+      sortKey: -1770889450657
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/users"
+        name: H4 - POST Users without token (401)
+        meta:
+          id: req_c6340c2ab27e4762985b1232b565b084
+          created: 1770889472442
+          modified: 1770893476437
+          isPrivate: false
+          description: ""
+          sortKey: -1770889472442
+        method: POST
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "name": "No Auth User",
+              "gender": "male",
+              "email": "{{ _.noauth_email }}",
+              "status": "active"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        authentication:
+          type: none
+        scripts:
+          preRequest: |
+            // ===============================
+            // H4 Pre-request
+            // Generate a unique email and store it in environment
+            // ===============================
+
+            const now = Date.now(); // ms timestamp
+            const email = `noauth-${now}@example.com`;
+
+            // Save to environment so body can reference {{ _.noauth_email }}
+            insomnia.environment.set("noauth_email", email);
+          afterResponse: >
+            // ===============================
+
+            // H4 After-response
+
+            // POST /users WITHOUT token
+
+            // Expect: 401 Unauthorized
+
+            // Insomnia 12.3.1 compatible
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let bodyStr = "";
+
+            try {
+              bodyStr = JSON.stringify(insomnia.response.json());
+            } catch (e) {
+              bodyStr = "";
+            }
+
+
+            insomnia.test("Status code is 401", () => {
+              insomnia.expect(getStatusCode()).to.eql(401);
+            });
+
+
+            insomnia.test("Content-Type is JSON when present", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              if (ct) insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Error body indicates authentication issue (soft)", ()
+            => {
+              if (!bodyStr) return;
+
+              const lower = bodyStr.toLowerCase();
+              const expectedFragments = ["unauthorized", "authentication", "token", "invalid", "access denied"];
+              const matched = expectedFragments.some(f => lower.includes(f));
+
+              insomnia.expect(matched).to.eql(true);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users"
+        name: H5 - POST Users with invalid token (401)
+        meta:
+          id: req_0c33bce42f9f49329e8742b2390989ae
+          created: 1770893551926
+          modified: 1770893602124
+          isPrivate: false
+          description: ""
+          sortKey: -1770893551926
+        method: POST
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "name": "Invalid Token User",
+              "gender": "male",
+              "email": "{{ _.invalid_token_email }}",
+              "status": "active"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        scripts:
+          preRequest: |
+            // ===============================
+            // H5 Pre-request
+            // Generate unique email for invalid-token attempt
+            // ===============================
+
+            const now = Date.now();
+            const email = `invalid-token-${now}@example.com`;
+
+            insomnia.environment.set("invalid_token_email", email);
+          afterResponse: >
+            // ===============================
+
+            // H5 After-response
+
+            // POST /users with INVALID token
+
+            // Expect: 401 Unauthorized
+
+            // Insomnia 12.3.1 compatible
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let bodyStr = "";
+
+            try {
+              bodyStr = JSON.stringify(insomnia.response.json());
+            } catch (e) {
+              bodyStr = "";
+            }
+
+
+            insomnia.test("Status code is 401", () => {
+              insomnia.expect(getStatusCode()).to.eql(401);
+            });
+
+
+            insomnia.test("Content-Type is JSON when present", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              if (ct) insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Error body indicates invalid authentication (soft)",
+            () => {
+              if (!bodyStr) return;
+
+              const lower = bodyStr.toLowerCase();
+              const expectedFragments = ["unauthorized", "invalid", "token", "authentication", "access denied"];
+              const matched = expectedFragments.some(f => lower.includes(f));
+
+              insomnia.expect(matched).to.eql(true);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users/{{ _.post_user_id }}/posts"
+        name: P6 - Create Post missing title (422)
+        meta:
+          id: req_41ade97601c74045ae0c13807e194936
+          created: 1770897026151
+          modified: 1770897133600
+          isPrivate: false
+          description: ""
+          sortKey: -1770897026151
+        method: POST
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "body": "{{ _.invalid_post_body }}"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        authentication:
+          type: bearer
+          token: e39fab0182f87db576b021c7431e3ee5baf63609a7bad5debf3735951bead666
+        scripts:
+          preRequest: >
+            // ===============================
+
+            // P6 Pre-request
+
+            // Generate a body for invalid post attempt (missing title)
+
+            // ===============================
+
+
+            const now = Date.now();
+
+            insomnia.environment.set("invalid_post_body", `Invalid post body
+            (missing title) at ${new Date(now).toISOString()}`);
+          afterResponse: >
+            // ===============================
+
+            // P6 After-response
+
+            // POST /users/{post_user_id}/posts with missing title
+
+            // Expect: 422 Unprocessable Entity
+
+            // Validate: error mentions 'title'
+
+            // Insomnia 12.3.1 compatible
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let data = null;
+
+            try {
+              data = insomnia.response.json();
+            } catch (e) {
+              data = null;
+            }
+
+
+            insomnia.test("Status code is 422", () => {
+              insomnia.expect(getStatusCode()).to.eql(422);
+            });
+
+
+            insomnia.test("Content-Type is JSON", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Error response is an array of validation errors", ()
+            => {
+              // GoREST commonly returns an array like:
+              // [{ field: "title", message: "can't be blank" }]
+              insomnia.expect(Array.isArray(data)).to.eql(true);
+              if (Array.isArray(data) && data.length > 0) {
+                insomnia.expect(data[0]).to.be.an("object");
+              }
+            });
+
+
+            insomnia.test("At least one validation error references 'title'", ()
+            => {
+              if (!Array.isArray(data)) throw new Error("Expected validation errors array");
+
+              const mentionsTitle = data.some(err => {
+                const field = String(err.field || "").toLowerCase();
+                const msg = String(err.message || "").toLowerCase();
+                return field === "title" || msg.includes("title");
+              });
+
+              insomnia.expect(mentionsTitle).to.eql(true);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users/{{ _.post_user_id }}/posts"
+        name: P7 - Create Post missing body (422)
+        meta:
+          id: req_259d2b9326704127bb50610f9eb03a35
+          created: 1770975665086
+          modified: 1770975741622
+          isPrivate: false
+          description: ""
+          sortKey: -1770975665086
+        method: POST
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "title": "{{ _.invalid_post_title }}"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        authentication:
+          type: bearer
+          token: e39fab0182f87db576b021c7431e3ee5baf63609a7bad5debf3735951bead666
+        scripts:
+          preRequest: >
+            // ===============================
+
+            // P7 Pre-request
+
+            // Generate a title for invalid post attempt (missing body)
+
+            // ===============================
+
+
+            const now = Date.now();
+
+            insomnia.environment.set("invalid_post_title", `Invalid post title
+            (missing body) ${now}`);
+          afterResponse: >
+            // ===============================
+
+            // P7 After-response
+
+            // POST /users/{post_user_id}/posts with missing body
+
+            // Expect: 422 Unprocessable Entity
+
+            // Validate: error mentions 'body'
+
+            // Insomnia 12.3.1 compatible
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let data = null;
+
+            try {
+              data = insomnia.response.json();
+            } catch (e) {
+              data = null;
+            }
+
+
+            insomnia.test("Status code is 422", () => {
+              insomnia.expect(getStatusCode()).to.eql(422);
+            });
+
+
+            insomnia.test("Content-Type is JSON", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Error response is an array of validation errors", ()
+            => {
+              insomnia.expect(Array.isArray(data)).to.eql(true);
+              if (Array.isArray(data) && data.length > 0) {
+                insomnia.expect(data[0]).to.be.an("object");
+              }
+            });
+
+
+            insomnia.test("At least one validation error references 'body'", ()
+            => {
+              if (!Array.isArray(data)) throw new Error("Expected validation errors array");
+
+              const mentionsBody = data.some(err => {
+                const field = String(err.field || "").toLowerCase();
+                const msg = String(err.message || "").toLowerCase();
+                return field === "body" || msg.includes("body");
+              });
+
+              insomnia.expect(mentionsBody).to.eql(true);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users"
+        name: U-VAL1 - Create User missing email (422)
+        meta:
+          id: req_a8bee1ac5b714c41bc7129f4c212ccef
+          created: 1770975778395
+          modified: 1770975854832
+          isPrivate: false
+          description: ""
+          sortKey: -1770975778395
+        method: POST
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "name": "Missing Email User",
+              "gender": "male",
+              "status": "active"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        authentication:
+          type: bearer
+          token: e39fab0182f87db576b021c7431e3ee5baf63609a7bad5debf3735951bead666
+        scripts:
+          afterResponse: >
+            // ===============================
+
+            // U-VAL1 After-response
+
+            // POST /users without email
+
+            // Expect: 422 Unprocessable Entity
+
+            // Validate: error mentions 'email'
+
+            // Insomnia 12.3.1 compatible
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let data = null;
+
+            try {
+              data = insomnia.response.json();
+            } catch (e) {
+              data = null;
+            }
+
+
+            insomnia.test("Status code is 422", () => {
+              insomnia.expect(getStatusCode()).to.eql(422);
+            });
+
+
+            insomnia.test("Content-Type is application/json", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Response is validation error array", () => {
+              insomnia.expect(Array.isArray(data)).to.eql(true);
+              if (Array.isArray(data) && data.length > 0) {
+                insomnia.expect(data[0]).to.be.an("object");
+              }
+            });
+
+
+            insomnia.test("At least one validation error references 'email'", ()
+            => {
+              if (!Array.isArray(data)) throw new Error("Expected validation errors array");
+
+              const mentionsEmail = data.some(err => {
+                const field = String(err.field || "").toLowerCase();
+                const msg = String(err.message || "").toLowerCase();
+                return field === "email" || msg.includes("email");
+              });
+
+              insomnia.expect(mentionsEmail).to.eql(true);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users"
+        name: U-VAL2 - Create User invalid email format (422)
+        meta:
+          id: req_9acb9020990e46c3896029d0dbd93447
+          created: 1770975936311
+          modified: 1770976064412
+          isPrivate: false
+          description: ""
+          sortKey: -1770975936311
+        method: POST
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        authentication:
+          type: bearer
+          token: e39fab0182f87db576b021c7431e3ee5baf63609a7bad5debf3735951bead666
+        scripts:
+          afterResponse: >
+            // ===============================
+
+            // U-VAL2 After-response
+
+            // POST /users with invalid email format
+
+            // Expect: 422 Unprocessable Entity
+
+            // Validate: error references 'email'
+
+            // Insomnia 12.3.1 compatible
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let data = null;
+
+            try {
+              data = insomnia.response.json();
+            } catch (e) {
+              data = null;
+            }
+
+
+            insomnia.test("Status code is 422", () => {
+              insomnia.expect(getStatusCode()).to.eql(422);
+            });
+
+
+            insomnia.test("Content-Type is application/json", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Response is validation error array", () => {
+              insomnia.expect(Array.isArray(data)).to.eql(true);
+            });
+
+
+            insomnia.test("At least one validation error references 'email'", ()
+            => {
+              if (!Array.isArray(data)) throw new Error("Expected validation errors array");
+
+              const mentionsEmail = data.some(err => {
+                const field = String(err.field || "").toLowerCase();
+                const msg = String(err.message || "").toLowerCase();
+                return field === "email" || msg.includes("email");
+              });
+
+              insomnia.expect(mentionsEmail).to.eql(true);
+            });
+
+
+            insomnia.test("Log email validation message (non-failing)", () => {
+              // This test intentionally never fails; it records what the API actually says.
+              if (!Array.isArray(data)) return;
+
+              const emailErr = data.find(err => String(err.field || "").toLowerCase() === "email");
+              if (!emailErr) return;
+
+              const msg = String(emailErr.message || "");
+              console.log("GoREST email validation message:", msg);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users"
+        name: U-VAL3A - Create user for duplicate email (201)
+        meta:
+          id: req_e313697d2c5b4144939e4e9920c3d4b0
+          created: 1770976206906
+          modified: 1770976260751
+          isPrivate: false
+          description: ""
+          sortKey: -1770976206906
+        method: POST
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "name": "Dup Email Seed User",
+              "gender": "male",
+              "email": "{{ _.dup_email }}",
+              "status": "active"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        authentication:
+          type: bearer
+          token: e39fab0182f87db576b021c7431e3ee5baf63609a7bad5debf3735951bead666
+        scripts:
+          preRequest: >
+            // ===============================
+
+            // U-VAL3A Pre-request
+
+            // Generate a unique email that we'll reuse to trigger duplicate
+            email
+
+            // ===============================
+
+
+            const now = Date.now();
+
+            const email = `dup-email-${now}@example.com`;
+
+
+            insomnia.environment.set("dup_email", email);
+          afterResponse: >
+            // ===============================
+
+            // U-VAL3A After-response
+
+            // Create seed user
+
+            // Expect: 201
+
+            // Store: dup_user_id (and confirm dup_email)
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let data = null;
+
+            try {
+              data = insomnia.response.json();
+            } catch (e) {
+              data = null;
+            }
+
+
+            insomnia.test("Status code is 201", () => {
+              insomnia.expect(getStatusCode()).to.eql(201);
+            });
+
+
+            insomnia.test("Content-Type is application/json", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Response has id + email", () => {
+              insomnia.expect(data).to.be.an("object");
+              insomnia.expect(data).to.have.property("id");
+              insomnia.expect(data).to.have.property("email");
+              insomnia.expect(typeof data.id).to.eql("number");
+              insomnia.expect(typeof data.email).to.eql("string");
+            });
+
+
+            insomnia.test("Response email matches dup_email", () => {
+              const dupEmail = insomnia.environment.get("dup_email");
+              insomnia.expect(dupEmail).to.be.a("string");
+              insomnia.expect(data.email).to.eql(dupEmail);
+            });
+
+
+            // Store for subsequent request + cleanup
+
+            if (data && typeof data.id === "number") {
+              insomnia.environment.set("dup_user_id", String(data.id));
+            }
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users"
+        name: U-VAL3B - Create user with duplicate email (422)
+        meta:
+          id: req_412a6381664b41f19df0b8a501df650c
+          created: 1770976287725
+          modified: 1771000812885
+          isPrivate: false
+          description: ""
+          sortKey: -1770976287725
+        method: POST
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "name": "Dup Email Second User",
+              "gender": "male",
+              "email": "{{ _.dup_email }}",
+              "status": "active"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        authentication:
+          type: bearer
+          token: e39fab0182f87db576b021c7431e3ee5baf63609a7bad5debf3735951bead666
+        scripts:
+          afterResponse: >
+            // ===============================
+
+            // U-VAL3B After-response
+
+            // Create second user with same email
+
+            // Expect: 422
+
+            // Validate: error references email (duplicate)
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let data = null;
+
+            try {
+              data = insomnia.response.json();
+            } catch (e) {
+              data = null;
+            }
+
+
+            insomnia.test("Status code is 422", () => {
+              insomnia.expect(getStatusCode()).to.eql(422);
+            });
+
+
+            insomnia.test("Content-Type is application/json", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Response is validation error array", () => {
+              insomnia.expect(Array.isArray(data)).to.eql(true);
+            });
+
+
+            insomnia.test("At least one validation error references 'email'", ()
+            => {
+              if (!Array.isArray(data)) throw new Error("Expected validation errors array");
+
+              const mentionsEmail = data.some(err => {
+                const field = String(err.field || "").toLowerCase();
+                const msg = String(err.message || "").toLowerCase();
+                return field === "email" || msg.includes("email");
+              });
+
+              insomnia.expect(mentionsEmail).to.eql(true);
+            });
+
+
+            insomnia.test("Log duplicate email message (non-failing)", () => {
+              if (!Array.isArray(data)) return;
+
+              const emailErr = data.find(err => String(err.field || "").toLowerCase() === "email");
+              if (!emailErr) return;
+
+              console.log("GoREST duplicate email message:", String(emailErr.message || ""));
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users/{{ _.dup_user_id }}"
+        name: U-VAL3C - Cleanup delete dup user (204)
+        meta:
+          id: req_8f640eb20d1e4eb2a2ccf1e88d7c83bb
+          created: 1770976345096
+          modified: 1770976394866
+          isPrivate: false
+          description: ""
+          sortKey: -1770976345096
+        method: DELETE
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        authentication:
+          type: bearer
+          token: e39fab0182f87db576b021c7431e3ee5baf63609a7bad5debf3735951bead666
+        scripts:
+          afterResponse: >
+            // ===============================
+
+            // U-VAL3C After-response
+
+            // Cleanup delete seed user
+
+            // Expect: 204
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            insomnia.test("Status code is 204", () => {
+              insomnia.expect(getStatusCode()).to.eql(204);
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users"
+        name: U-VAL4 - Create User invalid gender (422)
+        meta:
+          id: req_d536dad5ef394873935effa9e283bf4e
+          created: 1770976430312
+          modified: 1770976475411
+          isPrivate: false
+          description: ""
+          sortKey: -1770976430312
+        method: POST
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "name": "Invalid Gender User",
+              "gender": "unknown",
+              "email": "{{ _.invalid_gender_email }}",
+              "status": "active"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        authentication:
+          type: bearer
+          token: e39fab0182f87db576b021c7431e3ee5baf63609a7bad5debf3735951bead666
+        scripts:
+          preRequest: |
+            // ===============================
+            // U-VAL4 Pre-request
+            // Generate unique email so only gender causes validation failure
+            // ===============================
+
+            const now = Date.now();
+            const email = `invalid-gender-${now}@example.com`;
+
+            insomnia.environment.set("invalid_gender_email", email);
+          afterResponse: >
+            // ===============================
+
+            // U-VAL4 After-response
+
+            // POST /users with invalid gender enum
+
+            // Expect: 422 Unprocessable Entity
+
+            // Validate: error references 'gender'
+
+            // Insomnia 12.3.1 compatible
+
+            // ===============================
+
+
+            function getStatusCode() {
+              if (typeof insomnia.response.statusCode === "number") return insomnia.response.statusCode;
+              if (typeof insomnia.response.code === "number") return insomnia.response.code;
+              if (typeof insomnia.response.status === "string") {
+                const match = insomnia.response.status.match(/\d{3}/);
+                if (match) return Number(match[0]);
+              }
+              return undefined;
+            }
+
+
+            function getHeader(name) {
+              const headers = insomnia.response.headers || [];
+              const header = headers.find(h => (h.key || "").toLowerCase() === name.toLowerCase());
+              return header ? String(header.value || "") : "";
+            }
+
+
+            let data = null;
+
+            try {
+              data = insomnia.response.json();
+            } catch (e) {
+              data = null;
+            }
+
+
+            insomnia.test("Status code is 422", () => {
+              insomnia.expect(getStatusCode()).to.eql(422);
+            });
+
+
+            insomnia.test("Content-Type is application/json", () => {
+              const ct = getHeader("content-type").toLowerCase();
+              insomnia.expect(ct).to.contain("application/json");
+            });
+
+
+            insomnia.test("Response is validation error array", () => {
+              insomnia.expect(Array.isArray(data)).to.eql(true);
+            });
+
+
+            insomnia.test("At least one validation error references 'gender'",
+            () => {
+              if (!Array.isArray(data)) throw new Error("Expected validation errors array");
+
+              const mentionsGender = data.some(err => {
+                const field = String(err.field || "").toLowerCase();
+                const msg = String(err.message || "").toLowerCase();
+                return field === "gender" || msg.includes("gender");
+              });
+
+              insomnia.expect(mentionsGender).to.eql(true);
+            });
+
+
+            insomnia.test("Log gender validation message (non-failing)", () => {
+              if (!Array.isArray(data)) return;
+
+              const genderErr = data.find(err => String(err.field || "").toLowerCase() === "gender");
+              if (!genderErr) return;
+
+              console.log("GoREST gender validation message:", String(genderErr.message || ""));
+            });
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/users"
+        name: U-VAL5 - Create User invalid status enum (422)
+        meta:
+          id: req_5b3ae7c453e841d991c02a86d3351cff
           created: 1770976520392
           modified: 1770976628187
           isPrivate: false
